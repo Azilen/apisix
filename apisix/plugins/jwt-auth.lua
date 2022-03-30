@@ -71,6 +71,12 @@ local consumer_schema = {
         vault = {
             type = "object",
             properties = {}
+        },
+        inject_access_token_payload_in_request = {type = "boolean", default = true},
+        access_token_payload_header_name = {
+            type = "string",
+            minLength = 1,
+            maxLength = 4096
         }
     },
     dependencies = {
@@ -393,6 +399,13 @@ function _M.rewrite(conf, ctx)
 
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
+    end
+    
+    -- Set access token payload in to `access_token_payload_header_name` header.
+    local inject_access_token_payload = consumer.auth_conf.inject_access_token_payload_in_request and 
+    consumer.auth_conf.access_token_payload_header_name
+    if inject_access_token_payload then
+        core.request.set_header(ctx, consumer.auth_conf.access_token_payload_header_name, core.json.encode(jwt_obj.payload))
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
