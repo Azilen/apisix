@@ -1215,3 +1215,149 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 --- error_code: 400
 --- response_body_like eval
 qr/failed to validate dependent schema for \\"algorithm\\"/
+
+
+=== TEST 52: inject jwt token payload
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                              "client_id": "course_management",
+                              "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                              "disable": false,
+                              "password_grant_token_generation_incoming_uri": "/jwt/token",
+                              "ssl_verify": false,
+                              "token_endpoint": "http://127.0.0.1:" .. ngx.var.server_port .. "/auth/realms/University/protocol/openid-connect/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "localhost": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "name":"jwt_test",
+                        "host": "127.0.0.1",
+                        "uri": "/jwt/token"                        
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("Error while creating route.")
+                return
+            end
+            
+            local json_decode = require("toolkit.json").decode
+            local json_encode = require("toolkit.json").encode
+            local consumer_mod = require("apisix.consumer")
+            local ipairs   = ipairs
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/jwt/token"
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/x-www-form-urlencoded",
+                },
+
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                    password = "123456",
+                }),
+            })
+                
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+                local refreshToken = body["refresh_token"]
+
+                if accessToken and refreshToken then
+                    local jwt = require("resty.jwt")
+                    local jwt_obj = jwt:load_jwt(accessToken)
+                                        
+                    if not jwt_obj.valid then
+                        ngx.status = 401
+                        ngx.say(jwt_obj.reason)
+                        return
+                    end
+
+                    local user_key = jwt_obj.payload and jwt_obj.payload.key
+                    if not user_key then
+                        ngx.status = 401
+                        ngx.say("missing user key in JWT token")
+                        return
+                    end
+                    
+                    local code, body = t('/apisix/admin/consumers',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "username": "consumer_name",
+                        "plugins": {
+                            "jwt-auth": {
+                              "access_token_payload_header_name": "X-User-Info",
+                              "algorithm": "RS256",
+                              "base64_secret": false,
+                              "disable": false,
+                              "exp": 86400,
+                              "inject_access_token_payload_in_request": true,
+                              "key": "token-claim_name",
+                              "private_key": "",
+                              "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvjjHDPhDr7PRVbg/ldpciS4yOQh3zV/8RYKsbCN9ezSFrWuWJZ+KMfqe1OtfKj75WammMWa7nagnFGkSh/mxd0I2yk/wtElsO94UayYa7EeM78Y5ZburgsUPe862omlf+iT4I/+g7bUax58eIgb2ZgLNn9dLPmB5UfX++TJc7zQP/xQ7cC/bbN0Q4vOLAStR6A9y0Y0wWrC5leJh/iZ8T7CUODq+lTECdVN0wccFxim/+rfUmMrNHgQPfgXQI5mKLKe6NtJ5ndjJqrc5taPXw/Iv4SteeMSbnY+Gw3064U0tc4D1CZ0fsr4Ei9h7sM6vrN1pEGq5DPcE86s/RX6xtwIDAQAB\n-----END PUBLIC KEY-----"
+                            }
+                        }
+                    }]]
+                    )
+                   
+                    if code>=300 then
+                        ngx.status = code
+                        ngx.say("Error while creating consumer")
+                        return
+                    end
+                    
+                    local consumer_conf = consumer_mod.plugin("jwt-auth")
+                    
+                    if not consumer_conf then
+                        ngx.status = 401
+                        ngx.say("Missing related consumer")
+                        return
+                    end
+                    
+                    local consumer_names = {}
+                    for _, consumer in ipairs(consumer_conf.nodes) do                        
+                        consumer_names[consumer.auth_conf.key] = consumer
+                    end
+                    
+                    local consumer= consumer_names[user_key]
+                    if not consumer then
+                        ngx.status = 401
+                        ngx.say("Invalid user key in JWT token")
+                        return
+                    end
+                    
+                    local inject_access_token_payload = consumer.auth_conf.inject_access_token_payload_in_request and 
+                    consumer.auth_conf.access_token_payload_header_name
+                    if inject_access_token_payload then
+                       ngx.ctx.headers={}
+                       ngx.ctx.headers[consumer.auth_conf.access_token_payload_header_name]= json_encode(jwt_obj.payload)                       
+                    end
+                    ngx.status = 200
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]

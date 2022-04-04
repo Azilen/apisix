@@ -45,6 +45,8 @@ For consumer side:
 | exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                                                                                                                  |
 | base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
 | vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
+| inject_access_token_payload | boolean | optional | false  |                   | To include access token payload in ctx header. So that you can get user information in response header.                                |
+| access_token_payload_header_name | string | optional |       | "X-User-Info"  | Header name in which you want to set access token payload and get in response.                                                       |
 
 **Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) under the vault attributes.
 
@@ -312,3 +314,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+### Get Keycloak User Information
+
+To get user information in the redirect endpoint, you need to set `inject_access_token_payload_in_request` to true in the JWT Plugin.
+So that you can get the full access token payload along with user information from the header mentioned in the `access_token_payload_header_name` property in the JWT Plugin.
