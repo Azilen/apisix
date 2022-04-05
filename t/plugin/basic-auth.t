@@ -86,24 +86,11 @@ done
                             "password": "bar"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "foo",
-                            "plugins": {
-                                "basic-auth": {
-                                    "username": "foo",
-                                    "password": "bar"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -209,7 +196,7 @@ GET /hello
 Authorization: Basic YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid user key in authorization"}
+{"message":"Invalid user authorization"}
 --- no_error_log
 [error]
 
@@ -222,7 +209,7 @@ GET /hello
 Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
-{"message":"Password is error"}
+{"message":"Invalid user authorization"}
 --- no_error_log
 [error]
 

@@ -21,7 +21,7 @@ title: basic-auth
 #
 -->
 
-## Name
+## Description
 
 `basic-auth` is an authentication plugin that need to work with `consumer`. Add Basic Authentication to a `service` or `route`.
 
@@ -105,7 +105,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -ubar:bar http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Invalid user key in authorization"}
+{"message":"Invalid user authorization"}
 ```
 
 - password is invalid:
@@ -114,7 +114,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -ufoo:foo http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Password is error"}
+{"message":"Invalid user authorization"}
 ```
 
 - success:

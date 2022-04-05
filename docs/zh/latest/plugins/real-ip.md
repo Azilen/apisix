@@ -21,13 +21,13 @@ title: real-ip
 #
 -->
 
-## 简介
+## 描述
 
 `real-ip` 插件用于动态改变传递到 `APISIX` 的客户端的 `IP` 和端口。
 
 它工作方式和 `Nginx` 里 `ngx_http_realip_module` 模块一样，并且更为灵活。
 
-**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤6：为-apache-apisix-构建-openresty) 上。**
+**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。**
 
 ## 属性
 

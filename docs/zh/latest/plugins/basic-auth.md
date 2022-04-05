@@ -21,7 +21,7 @@ title: basic-auth
 #
 -->
 
-## 名字
+## 描述
 
 `basic-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
 
@@ -105,7 +105,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -ubar:bar http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Invalid user key in authorization"}
+{"message":"Invalid user authorization"}
 ```
 
 - 密码错误：
@@ -114,7 +114,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -ufoo:foo http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Password is error"}
+{"message":"Invalid user authorization"}
 ...
 ```
 

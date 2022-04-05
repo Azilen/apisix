@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,24 +17,8 @@
 # limitations under the License.
 #
 
-# when using prometheus-operator, you can apply this into k8s.
-# Mention: ServiceMonitor should be the same namespace with prometheus-operator.
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: apisix-gw
-  labels:
-    app: apisix-gw
-spec:
-  endpoints:
-    - interval: 10s
-      honorLabels: true
-      port: http
-      path: /apisix/prometheus/metrics
-      scheme: http
-  selector:
-    matchLabels:
-      app: apisix-gw
-  namespaceSelector:
-    any: true
+set -euo pipefail
+
+grep "^<<<<<<< HEAD" $(git grep --cached -l '' | xargs) && exit 1
+grep "^>>>>>>> master" $(git grep --cached -l '' | xargs) && exit 1
+exit 0

@@ -21,11 +21,11 @@ title: gzip
 #
 -->
 
-## 简介
+## 描述
 
 `gzip` 插件能动态设置 `Nginx` 的压缩行为。
 
-**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤6：为-apache-apisix-构建-openresty) 上。**
+**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。**
 
 ## 属性
 
